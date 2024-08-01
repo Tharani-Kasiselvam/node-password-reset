@@ -8,8 +8,8 @@ console.log("Connecting to MongoDB")
 mongoose.connect(config.MONGODB_URI)
     .then(()=>{
         console.log("CONNECTED to MongoDB")
-        app.listen(8081,()=>{
-            console.log("Server running on http://localhost:8081")
+        app.listen(5001,()=>{
+            console.log("Server running on http://localhost:5001")
         })
 
     }).catch(error=>{
