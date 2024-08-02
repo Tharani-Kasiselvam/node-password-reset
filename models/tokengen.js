@@ -9,7 +9,8 @@ const tokengenSchema = new mongoose.Schema(
         tokenStr : String,
         createdAt : {
             type : Date,
-            expires : 3600
+            default : Date.now,
+            expires : '1m'
         }
     },
     {
