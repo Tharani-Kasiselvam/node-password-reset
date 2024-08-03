@@ -6,30 +6,14 @@ require('dotenv').config()
 const sendEmail = require('../utils/sendEmail')
 
 const pwdresetController = {
-    getUser : async (req,res) => {
-        try{
-            const {email} = req.body
-
-            const userData = await users.findOne({"email":email})
-
-            if (!userData)
-                return res.status(400).json({error:"user with given email doesn't exist"})
-            else
-                res.json({message:"Users Data", userData})
-
-         }catch(error){
-            res.json({message:"Error in fetching user data"})
-        }
-    },
-
+    //Token generation
     createToken : async(req,res)=>{
         try{
             const {email} = req.body
-
             const user_data = await users.findOne({ "email": email })
 
         if (!user_data)
-            return res.status(400).json({error:"user with given email doesn't exist"});
+            return res.status(400).send({error:"user with given Email doesn't exist"});
 
         let token = await tokengen.findOne({ "userId" : user_data._id.toString()});
 
@@ -43,22 +27,18 @@ const pwdresetController = {
                 tokenStr
             })
             await token.save()
+
+            const link = `${process.env.BASE_URL}/password-reset/${userId}/${token.tokenStr}`
+
+            await sendEmail(user_name, email, "Password reset-Sending Email using Node.js", link)
+            
+            res.status(200).send({message:"Password Reset link sent to your Email account"})
         }
         else
-            res.json({message:"Token already generated for this user"});
-
-        const link = `${process.env.BASE_URL}/password-reset/${userId}/${token.tokenStr}`
-
-        await sendEmail(user_name, email, "Password reset-Sending Email using Node.js", link)
-            .then(()=>{
-                res.json({message:"password reset link sent to your email account"})
-            }).catch(error => {
-                res.json({message:"Error occurred while sending email"})
-            })
+            res.status(400).send({error:"Password Reset Link already sent to your Email account"})
 
         }catch(error){
-            res.json({message:"Error in generating the Token/sending email"})
-            console.log(error);
+            res.status(400).send({error:"Error in generating the Token/sending email"})
         }
     },
 
@@ -74,9 +54,12 @@ const pwdresetController = {
                 email: Joi.string().email().min(5).max(50).optional()
             })
         const { error } = schema.validate(req.body);
-        if (error) 
-            return res.status(400).send(error.details[0].message);
-        
+
+        if (error) {
+            const error_msg = error.details[0].message
+            res.status(400).send({error:error_msg})
+        }
+        else{
         const user = await users.findOne({"_id" : userId});
 
         const token = await tokengen.findOne({
@@ -87,6 +70,7 @@ const pwdresetController = {
         if (!token) 
             return res.status(400).json({error:"Invalid Token link or expired"});
         
+        else{
         user.password = password
         await user.save()
         .then(async ()=>{
@@ -96,9 +80,10 @@ const pwdresetController = {
         })
 
         res.json({message:"Password Reset sucessfully"})
-
+        }
+    }
         }catch(error){
-        return res.json({message:"Error while verifying the User/Token, kindly enter valid details"});
+         res.status(400).send({error:"Error while verifying the User/Token, kindly enter valid details"});
         }
     }
 }
