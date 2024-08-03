@@ -27,8 +27,8 @@ const pwdresetController = {
                 tokenStr
             })
             await token.save()
-
-            const link = `${process.env.BASE_URL}/password-reset/${userId}/${token.tokenStr}`
+            const BASE_URL = process.env.BASE_URL
+            const link = `${BASE_URL}/password-reset/${userId}/${token.tokenStr}`
 
             await sendEmail(user_name, email, "Password reset-Sending Email using Node.js", link)
             
